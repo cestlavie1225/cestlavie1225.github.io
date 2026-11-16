@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>装扮圣诞树🎄</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:system-ui, sans-serif;}
+body{
+  background:#0f172a;
+  color:#fff;
+  min-height:100vh;
+  overflow-x:hidden;
+  position:relative;
+}
+.snow{
+  position:fixed;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  pointer-events:none;
+  z-index:0;
+}
+.snow span{
+  position:absolute;
+  color:#fff;
+  opacity:0.8;
+  animation: fall linear infinite;
+}
+@keyframes fall{
+  0%{transform:translateY(-10px);}
+  100%{transform:translateY(100vh);}
+}
+.wrap{
+  max-width:900px;
+  margin:0 auto;
+  padding:24px;
+  position:relative;
+  z-index:1;
+}
+h1{text-align:center;margin-bottom:24px;font-size:28px;}
+.main{
+  display:flex;
+  gap:24px;
+  flex-wrap:wrap;
+  justify-content:center;
+  align-items:flex-start;
+}
+.palette{
+  background:#1e293b;
+  padding:18px;
+  border-radius:14px;
+  display:flex;
+  gap:12px;
+  flex-wrap:wrap;
+  width:230px;
+}
+.item{
+  font-size:38px;
+  cursor:grab;
+  padding:8px;
+  background:#334155;
+  border-radius:10px;
+  user-select:none;
+  transition: 0.2s;
+}
+.item:hover{background:#475569;}
+.item:active{cursor:grabbing;}
+.tree-box{
+  position:relative;
+  width:420px;
+  height:540px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.tree-img{
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  pointer-events:none;
+}
+.ornament{
+  position:absolute;
+  font-size:34px;
+  cursor:move;
+  user-select:none;
+  touch-action:none;
+  z-index:2;
+}
+.btns{
+  margin-top:20px;
+  text-align:center;
+}
+button{
+  padding:9px 18px;
+  border:none;
+  border-radius:10px;
+  margin:0 8px;
+  cursor:pointer;
+  font-size:15px;
+}
+#clear{background:#dc2626;color:#fff;}
+#save{background:#2563eb;color:#fff;}
+</style>
+</head>
+<body>
+<div class="snow" id="snowBox"></div>
+<div class="wrap">
+<h1>🎄 来装扮圣诞树</h1>
+<div class="main">
+  <div class="palette">
+    <div class="item" draggable="true" data-type="🔴">🔴</div>
+    <div class="item" draggable="true" data-type="🟡">🟡</div>
+    <div class="item" draggable="true" data-type="🔔">🔔</div>
+    <div class="item" draggable="true" data-type="🍬">🍬</div>
+    <div class="item" draggable="true" data-type="🎁">🎁</div>
+    <div class="item" draggable="true" data-type="✨">✨</div>
+    <div class="item" draggable="true" data-type="🟢">🟢</div>
+    <div class="item" draggable="true" data-type="🟣">🟣</div>
+  </div>
+  <div class="tree-box" id="treeBox">
+    <img class="tree-img" src="./tree.png" alt="圣诞树">
+  </div>
+</div>
+<div class="btns">
+  <button id="clear">清空圣诞树</button>
+  <button id="save">截图保存</button>
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script>
+// 雪花
+const snowBox = document.getElementById('snowBox');
+for(let i=0;i<60;i++){
+  const s = document.createElement('span');
+  s.innerText = '❄';
+  s.style.left = Math.random()*100+'%';
+  s.style.animationDuration = (Math.random()*5+4)+'s';
+  s.style.fontSize = (Math.random()*12+6)+'px';
+  s.style.animationDelay = Math.random()*4+'s';
+  snowBox.appendChild(s);
+}
+
+const treeBox = document.getElementById('treeBox');
+const clearBtn = document.getElementById('clear');
+const saveBtn = document.getElementById('save');
+let dragType = null;
+
+// 侧边素材拖拽
+document.querySelectorAll('.item').forEach(el=>{
+  el.addEventListener('dragstart',e=>{
+    dragType = e.target.dataset.type;
+  })
+})
+treeBox.addEventListener('dragover',e=>e.preventDefault());
+treeBox.addEventListener('drop',e=>{
+  e.preventDefault();
+  if(!dragType) return;
+  const rect = treeBox.getBoundingClientRect();
+  const x = e.clientX - rect.left - 17;
+  const y = e.clientY - rect.top - 17;
+  addOrnament(dragType, x, y);
+})
+
+// 创建装饰 + 独立拖拽
+function addOrnament(text, x, y){
+  const o = document.createElement('div');
+  o.className = 'ornament';
+  o.innerText = text;
+  o.style.left = x + 'px';
+  o.style.top = y + 'px';
+  treeBox.appendChild(o);
+
+  let ox, oy;
+  function move(e){
+    e.preventDefault();
+    const clientX = e.clientX ?? e.touches[0].clientX;
+    const clientY = e.clientY ?? e.touches[0].clientY;
+    o.style.left = (clientX - ox) + 'px';
+    o.style.top = (clientY - oy) + 'px';
+  }
+  function up(){
+    document.removeEventListener('mousemove', move);
+    document.removeEventListener('mouseup', up);
+    document.removeEventListener('touchmove', move);
+    document.removeEventListener('touchend', up);
+  }
+  o.addEventListener('mousedown', start);
+  o.addEventListener('touchstart', start);
+  function start(e){
+    e.preventDefault();
+    o.style.zIndex = 99;
+    const clientX = e.clientX ?? e.touches[0].clientX;
+    const clientY = e.clientY ?? e.touches[0].clientY;
+    ox = clientX - o.offsetLeft;
+    oy = clientY - o.offsetTop;
+    document.addEventListener('mousemove', move);
+    document.addEventListener('mouseup', up);
+    document.addEventListener('touchmove', move, {passive:false});
+    document.addEventListener('touchend', up);
+  }
+}
+
+clearBtn.onclick = ()=>{
+  document.querySelectorAll('.ornament').forEach(o=>o.remove());
+}
+saveBtn.onclick = async ()=>{
+  const canvas = await html2canvas(treeBox);
+  const a = document.createElement('a');
+  a.href = canvas.toDataURL('image/png');
+  a.download = '我的圣诞树.png';
+  a.click();
+}
+</script>
+</body>
+</html>
